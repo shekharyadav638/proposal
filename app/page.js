@@ -7,7 +7,7 @@ const Viewer = dynamic(() => import('../components/Viewer'), {
   loading: () => (
     <div className="boot">
       <div className="boot-spinner" />
-      <p>Loading proposal…</p>
+      <p>Angebot wird geladen…</p>
     </div>
   ),
 });

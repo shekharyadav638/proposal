@@ -25,16 +25,17 @@ function ConsentDialog({ onAccept, onCancel }) {
   return (
     <div className="consent-overlay" onClick={onCancel}>
       <div className="consent-card" onClick={(e) => e.stopPropagation()}>
-        <h2>Terms and conditions</h2>
+        <h2>Nutzungsbedingungen</h2>
         <p>
-          By clicking &quot;Agree,&quot; and each time I interact with this AI agent, I consent
-          to the recording, storage, and sharing of my communications with third-party service
-          providers, and as described in the Privacy Policy. If you do not wish to have your
-          conversations recorded, please refrain from using this service.
+          Indem ich auf „Zustimmen“ klicke, willige ich bei jeder Interaktion mit diesem
+          KI-Agenten in die Aufzeichnung, Speicherung und Weitergabe meiner Kommunikation an
+          Drittanbieter ein, wie in der Datenschutzerklärung beschrieben. Wenn Sie nicht
+          möchten, dass Ihre Gespräche aufgezeichnet werden, nutzen Sie diesen Dienst bitte
+          nicht.
         </p>
         <div className="consent-actions">
-          <button className="consent-cancel" onClick={onCancel}>Cancel</button>
-          <button className="consent-accept" onClick={onAccept}>Accept</button>
+          <button className="consent-cancel" onClick={onCancel}>Abbrechen</button>
+          <button className="consent-accept" onClick={onAccept}>Zustimmen</button>
         </div>
       </div>
     </div>
@@ -79,7 +80,7 @@ function Widget({ controllerRef }) {
       startSession({ agentId: AGENT_ID, connectionType: 'websocket' });
     } catch (e) {
       console.error(e);
-      setError(e?.message || 'Microphone access is required.');
+      setError('Mikrofonzugriff ist erforderlich.');
     }
   }, [startSession]);
 
@@ -91,24 +92,24 @@ function Widget({ controllerRef }) {
           <>
             <div className="agent-row">
               <div className={`agent-orb${isSpeaking ? ' speaking' : ' listening'}`} />
-              <span className="agent-chip">{isSpeaking ? 'Talk to interrupt' : 'Listening…'}</span>
+              <span className="agent-chip">{isSpeaking ? 'Sprechen zum Unterbrechen' : 'Ich höre zu…'}</span>
             </div>
             <button className="agent-end-btn" onClick={() => endSession()}>
-              <PhoneIcon hangup /> End
+              <PhoneIcon hangup /> Beenden
             </button>
           </>
         ) : (
           <>
             <div className="agent-row">
               <div className="agent-orb" />
-              <div className="agent-title">Talk to this proposal</div>
+              <div className="agent-title">FlowEngage AI</div>
             </div>
             <button
               className="agent-btn"
               onClick={() => setShowConsent(true)}
               disabled={connecting}
             >
-              <PhoneIcon /> {connecting ? 'Connecting…' : 'Talk to this proposal'}
+              <PhoneIcon /> {connecting ? 'Verbindung wird hergestellt…' : 'Mit diesem Angebot sprechen'}
             </button>
           </>
         )}

@@ -44,10 +44,10 @@ function LazyPage({ pageNumber, width, ratio, onVisibleRef }) {
           renderTextLayer={false}
           renderAnnotationLayer={false}
           devicePixelRatio={Math.min(1.5, typeof window !== 'undefined' ? window.devicePixelRatio : 1)}
-          loading={<div className="page-placeholder" style={{ width, height }}>Rendering page {pageNumber}…</div>}
+          loading={<div className="page-placeholder" style={{ width, height }}>Seite {pageNumber} wird gerendert…</div>}
         />
       ) : (
-        <div className="page-placeholder" style={{ width, height }}>Page {pageNumber}</div>
+        <div className="page-placeholder" style={{ width, height }}>Seite {pageNumber}</div>
       )}
     </div>
   );
@@ -185,7 +185,7 @@ export default function Viewer() {
         <div className="sidebar-head">
           <h1>{PDF_TITLE}</h1>
           <div className="subtitle">{PDF_SUBTITLE}</div>
-          <div className="ready">Ready — {numPages || TOTAL_PAGES} pages</div>
+          <div className="ready">Bereit — {numPages || TOTAL_PAGES} Seiten</div>
         </div>
         <nav className="section-list">
           {SECTIONS.map((s) => {
@@ -211,10 +211,10 @@ export default function Viewer() {
           loading={
             <div className="boot" style={{ background: 'transparent', height: '80vh' }}>
               <div className="boot-spinner" />
-              <p style={{ color: '#e8ecec' }}>Loading proposal…</p>
+              <p style={{ color: '#e8ecec' }}>Angebot wird geladen…</p>
             </div>
           }
-          error={<div className="boot" style={{ background: 'transparent' }}><p style={{ color: '#fff' }}>Failed to load PDF.</p></div>}
+          error={<div className="boot" style={{ background: 'transparent' }}><p style={{ color: '#fff' }}>PDF konnte nicht geladen werden.</p></div>}
         >
           <div className="pages">
             {Array.from({ length: numPages }, (_, i) => {
