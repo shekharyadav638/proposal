@@ -128,17 +128,36 @@ export default function Viewer() {
       search: (params) => {
         const q = pickName(params).toLowerCase().trim();
         if (!q) return 'Empty search query. Please provide a search term.';
-        const hits = [];
+        const snippetAt = (text, idx, len) =>
+          text.slice(Math.max(0, idx - 100), idx + len + 140).replace(/\s+/g, ' ');
+        let hits = [];
+        // 1) exact phrase match
         pageText.forEach((text, i) => {
           const idx = text.toLowerCase().indexOf(q);
           if (idx >= 0) {
-            const snippet = text.slice(Math.max(0, idx - 100), idx + q.length + 140).replace(/\s+/g, ' ');
             const s = sectionForPage(i + 1);
-            hits.push(`Page ${i + 1}${s ? ` (section "${s.title}")` : ''}: …${snippet}…`);
+            hits.push(`Page ${i + 1}${s ? ` (section "${s.title}")` : ''}: …${snippetAt(text, idx, q.length)}…`);
           }
         });
-        if (!hits.length) return `No matches for "${q}" in the proposal. Try a different or shorter term.`;
-        return `Found ${hits.length} matching page(s) for "${q}" (showing up to 5):\n${hits.slice(0, 5).join('\n')}`;
+        // 2) fallback: individual keywords, pages ranked by how many match
+        if (!hits.length) {
+          const tokens = q.split(/\s+/).filter(w => w.length > 3);
+          const scored = [];
+          pageText.forEach((text, i) => {
+            const lower = text.toLowerCase();
+            const found = tokens.filter(t => lower.includes(t));
+            if (found.length) scored.push({ i, found, idx: lower.indexOf(found[0]) });
+          });
+          scored.sort((a, b) => b.found.length - a.found.length);
+          hits = scored.slice(0, 5).map(({ i, found, idx }) => {
+            const s = sectionForPage(i + 1);
+            return `Page ${i + 1}${s ? ` (section "${s.title}")` : ''} (matched: ${found.join(', ')}): …${snippetAt(pageText[i], idx, found[0].length)}…`;
+          });
+        }
+        if (!hits.length) {
+          return `No matches for "${q}" anywhere in the proposal. This information is NOT in the proposal — you must answer with the out-of-scope message: "This is out of scope of this proposal. If you want to know anything about this proposal, you can ask me." (German: "Das liegt außerhalb dieses Angebots. Wenn Sie etwas über dieses Angebot wissen möchten, fragen Sie mich gern.")`;
+        }
+        return `Found ${hits.length} matching page(s) for "${q}" (showing up to 5). Answer ONLY from these snippets — if they do not answer the question, use the out-of-scope message:\n${hits.slice(0, 5).join('\n')}`;
       },
 
       gotoSection: (params) => {

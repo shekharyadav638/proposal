@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   ConversationProvider,
   useConversationControls,
@@ -11,6 +11,17 @@ import {
 
 const AGENT_ID =
   process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID || 'agent_6601kwgghty0er9rqj5c2jtyk0db';
+
+const OUT_OF_SCOPE_EN =
+  'This is out of scope of this proposal. If you want to know anything about this proposal, you can ask me.';
+const OUT_OF_SCOPE_DE =
+  'Das liegt außerhalb dieses Angebots. Wenn Sie etwas über dieses Angebot wissen möchten, fragen Sie mich gern.';
+
+const SCOPE_RULES = `STRICT SCOPE RULES (enforced by the application):
+You are the voice guide for the OpenSense Labs proposal "bayern-evangelisch.de NEXT" (54 pages). You may ONLY answer with information that is written in this proposal document.
+1. Before answering ANY factual question (names, roles, team, prices, dates, technology, references), you MUST call the mdsg_search tool and base your answer strictly on the returned snippets. Then call mdsg_highlight_section to show the visitor the source section.
+2. If mdsg_search returns no relevant result, or the question is about anything not written in the proposal (general knowledge, OpenSense Labs beyond what the proposal states, other companies, other topics), you MUST reply exactly: "${OUT_OF_SCOPE_EN}" — or in German: "${OUT_OF_SCOPE_DE}". Use the language the visitor is speaking. Do not add any other information.
+3. Never invent or recall from memory any names, roles, numbers or facts. If it is not in the proposal text, it does not exist for you.`;
 
 const PhoneIcon = ({ hangup }) => (
   <svg
@@ -46,9 +57,23 @@ function Widget({ controllerRef }) {
   const [error, setError] = useState(null);
   const [showConsent, setShowConsent] = useState(false);
 
-  const { startSession, endSession } = useConversationControls();
+  const { startSession, endSession, sendContextualUpdate } = useConversationControls();
   const { status, message } = useConversationStatus();
   const { isSpeaking } = useConversationMode();
+
+  // Push the scope guardrails into the conversation as soon as it connects.
+  const rulesSentRef = useRef(false);
+  useEffect(() => {
+    if (status === 'connected' && !rulesSentRef.current) {
+      rulesSentRef.current = true;
+      try {
+        sendContextualUpdate(SCOPE_RULES);
+      } catch (e) {
+        console.warn('Could not send scope rules:', e);
+      }
+    }
+    if (status === 'disconnected') rulesSentRef.current = false;
+  }, [status, sendContextualUpdate]);
 
   useConversationClientTool('mdsg_list_sections', async () =>
     controllerRef.current.listSections()
