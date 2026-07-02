@@ -129,7 +129,7 @@ export default function Viewer() {
         const q = pickName(params).toLowerCase().trim();
         if (!q) return 'Empty search query. Please provide a search term.';
         const snippetAt = (text, idx, len) =>
-          text.slice(Math.max(0, idx - 100), idx + len + 140).replace(/\s+/g, ' ');
+          text.slice(Math.max(0, idx - 140), idx + len + 320).replace(/\s+/g, ' ');
         let hits = [];
         // 1) exact phrase match
         pageText.forEach((text, i) => {
@@ -157,7 +157,7 @@ export default function Viewer() {
         if (!hits.length) {
           return `No matches for "${q}" anywhere in the proposal. This information is NOT in the proposal — you must answer with the out-of-scope message: "This is out of scope of this proposal. If you want to know anything about this proposal, you can ask me." (German: "Das liegt außerhalb dieses Angebots. Wenn Sie etwas über dieses Angebot wissen möchten, fragen Sie mich gern.")`;
         }
-        return `Found ${hits.length} matching page(s) for "${q}" (showing up to 5). Answer ONLY from these snippets — if they do not answer the question, use the out-of-scope message:\n${hits.slice(0, 5).join('\n')}`;
+        return `Found ${hits.length} matching page(s) for "${q}" (showing up to 5). These snippets ARE from the proposal — answer the visitor's question using them. When a snippet lists a role immediately followed by a name (a team roster), that name is the person in that role. Only if none of these snippets relate to the question at all should you use the out-of-scope message:\n${hits.slice(0, 5).join('\n')}`;
       },
 
       gotoSection: (params) => {

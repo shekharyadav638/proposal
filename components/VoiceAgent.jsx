@@ -17,11 +17,12 @@ const OUT_OF_SCOPE_EN =
 const OUT_OF_SCOPE_DE =
   'Das liegt außerhalb dieses Angebots. Wenn Sie etwas über dieses Angebot wissen möchten, fragen Sie mich gern.';
 
-const SCOPE_RULES = `STRICT SCOPE RULES (enforced by the application):
-You are the voice guide for the OpenSense Labs proposal "bayern-evangelisch.de NEXT" (54 pages). You may ONLY answer with information that is written in this proposal document.
-1. Before answering ANY factual question (names, roles, team, prices, dates, technology, references), you MUST call the mdsg_search tool and base your answer strictly on the returned snippets. Then call mdsg_highlight_section to show the visitor the source section.
-2. If mdsg_search returns no relevant result, or the question is about anything not written in the proposal (general knowledge, OpenSense Labs beyond what the proposal states, other companies, other topics), you MUST reply exactly: "${OUT_OF_SCOPE_EN}" — or in German: "${OUT_OF_SCOPE_DE}". Use the language the visitor is speaking. Do not add any other information.
-3. Never invent or recall from memory any names, roles, numbers or facts. If it is not in the proposal text, it does not exist for you.`;
+const SCOPE_RULES = `SCOPE RULES (enforced by the application):
+You are the voice guide for the OpenSense Labs proposal "bayern-evangelisch.de NEXT" (54 pages). Answer using the information written in this proposal document.
+1. For any factual question (names, roles, team, prices, dates, technology, references), FIRST call the mdsg_search tool and read the returned snippets. Base your answer on them. When a snippet lists a role directly followed by a name (a team roster, e.g. "Engagement Lead Christoph Mangold Delivery Manager Florian Bunk …"), the name after each role IS the person in that role — read it out. After answering you MAY call mdsg_highlight_section to show the visitor the source section.
+2. Answer confidently whenever the snippets contain the information, even partially. This proposal DOES include the full team structure and named people — Engagement Lead, Delivery Manager, Project Manager, Tech Lead, Delivery Lead, developers and DevOps, with names, seniority and locations (pages 38–52). Never refuse a team, role or "who is …" question when search returns team pages.
+3. Only reply that something is out of scope when mdsg_search explicitly reports NO matches, OR when the question is clearly unrelated to this proposal (general knowledge, other companies, other topics). In that case reply exactly: "${OUT_OF_SCOPE_EN}" — or in German: "${OUT_OF_SCOPE_DE}". Use the language the visitor is speaking. Do not add any other information.
+4. Never invent or recall from memory any names, roles, numbers or facts. If it is not in the returned snippets, do not state it.`;
 
 const PhoneIcon = ({ hangup }) => (
   <svg
@@ -32,30 +33,8 @@ const PhoneIcon = ({ hangup }) => (
   </svg>
 );
 
-function ConsentDialog({ onAccept, onCancel }) {
-  return (
-    <div className="consent-overlay" onClick={onCancel}>
-      <div className="consent-card" onClick={(e) => e.stopPropagation()}>
-        <h2>Nutzungsbedingungen</h2>
-        <p>
-          Indem ich auf „Zustimmen“ klicke, willige ich bei jeder Interaktion mit diesem
-          KI-Agenten in die Aufzeichnung, Speicherung und Weitergabe meiner Kommunikation an
-          Drittanbieter ein, wie in der Datenschutzerklärung beschrieben. Wenn Sie nicht
-          möchten, dass Ihre Gespräche aufgezeichnet werden, nutzen Sie diesen Dienst bitte
-          nicht.
-        </p>
-        <div className="consent-actions">
-          <button className="consent-cancel" onClick={onCancel}>Abbrechen</button>
-          <button className="consent-accept" onClick={onAccept}>Zustimmen</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function Widget({ controllerRef }) {
   const [error, setError] = useState(null);
-  const [showConsent, setShowConsent] = useState(false);
 
   const { startSession, endSession, sendContextualUpdate } = useConversationControls();
   const { status, message } = useConversationStatus();
@@ -98,7 +77,6 @@ function Widget({ controllerRef }) {
   const connecting = status === 'connecting';
 
   const accept = useCallback(async () => {
-    setShowConsent(false);
     setError(null);
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -111,7 +89,6 @@ function Widget({ controllerRef }) {
 
   return (
     <>
-      {showConsent && <ConsentDialog onAccept={accept} onCancel={() => setShowConsent(false)} />}
       <div className="agent-widget">
         {connected ? (
           <>
@@ -131,7 +108,7 @@ function Widget({ controllerRef }) {
             </div>
             <button
               className="agent-btn"
-              onClick={() => setShowConsent(true)}
+              onClick={accept}
               disabled={connecting}
             >
               <PhoneIcon /> {connecting ? 'Verbindung wird hergestellt…' : 'Mit diesem Angebot sprechen'}
