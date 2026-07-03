@@ -64,6 +64,8 @@ export default function Viewer() {
   const [ratio, setRatio] = useState(0.5625); // updated from page 1 on load
   const [currentPage, setCurrentPage] = useState(1);
   const [spotlight, setSpotlight] = useState(null); // section id or null
+  const [sidebarOpen, setSidebarOpen] = useState(false); // mobile drawer state
+  const [pageWidth, setPageWidth] = useState(PAGE_WIDTH);
 
   const containerRef = useRef(null);
   const pageRefs = useRef([]);
@@ -94,6 +96,17 @@ export default function Viewer() {
     });
     currentPageRef.current = best;
     setCurrentPage(best);
+  }, []);
+
+  // Shrink page width to fit small screens instead of overflowing horizontally.
+  useEffect(() => {
+    const updateWidth = () => {
+      const available = containerRef.current?.clientWidth || window.innerWidth;
+      setPageWidth(Math.min(PAGE_WIDTH, available - 24));
+    };
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
   }, []);
 
   const scrollToPage = useCallback((page) => {
@@ -202,6 +215,7 @@ export default function Viewer() {
   const handleSidebarClick = (s) => {
     setSpotlight(s.id);
     scrollToPage(s.page);
+    setSidebarOpen(false); // close the drawer on mobile after picking a section
   };
 
   // FlowEngage config — memoised so the provider doesn't re-bootstrap on every
@@ -241,7 +255,20 @@ export default function Viewer() {
 
   return (
     <div className="shell">
-      <aside className="sidebar">
+      <button
+        className="sidebar-toggle"
+        onClick={() => setSidebarOpen((v) => !v)}
+        aria-label={sidebarOpen ? 'Menü schließen' : 'Menü öffnen'}
+        aria-expanded={sidebarOpen}
+      >
+        <span className="sidebar-toggle-bar" />
+        <span className="sidebar-toggle-bar" />
+        <span className="sidebar-toggle-bar" />
+      </button>
+
+      {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
+
+      <aside className={`sidebar${sidebarOpen ? ' open' : ''}`}>
         <div className="sidebar-head">
           <h1>{PDF_TITLE}</h1>
           <div className="subtitle">{PDF_SUBTITLE}</div>
@@ -304,7 +331,7 @@ export default function Viewer() {
                       {showChip && <div className="section-chip">{spotlitSection.title}</div>}
                     </div>
                   )}
-                  <LazyPage pageNumber={pageNum} width={PAGE_WIDTH} ratio={ratio} />
+                  <LazyPage pageNumber={pageNum} width={pageWidth} ratio={ratio} />
                 </div>
               );
             })}
