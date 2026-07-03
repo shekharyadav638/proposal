@@ -50,10 +50,10 @@ function LazyPage({ pageNumber, width, ratio, onVisibleRef }) {
           renderTextLayer={false}
           renderAnnotationLayer={false}
           devicePixelRatio={Math.min(1.5, typeof window !== 'undefined' ? window.devicePixelRatio : 1)}
-          loading={<div className="page-placeholder" style={{ width, height }}>Rendering page {pageNumber}…</div>}
+          loading={<div className="page-placeholder" style={{ width, height }}>Seite {pageNumber} wird gerendert…</div>}
         />
       ) : (
-        <div className="page-placeholder" style={{ width, height }}>Page {pageNumber}</div>
+        <div className="page-placeholder" style={{ width, height }}>Seite {pageNumber}</div>
       )}
     </div>
   );
@@ -134,17 +134,36 @@ export default function Viewer() {
       search: (params) => {
         const q = pickName(params).toLowerCase().trim();
         if (!q) return 'Empty search query. Please provide a search term.';
-        const hits = [];
+        const snippetAt = (text, idx, len) =>
+          text.slice(Math.max(0, idx - 140), idx + len + 320).replace(/\s+/g, ' ');
+        let hits = [];
+        // 1) exact phrase match
         pageText.forEach((text, i) => {
           const idx = text.toLowerCase().indexOf(q);
           if (idx >= 0) {
-            const snippet = text.slice(Math.max(0, idx - 100), idx + q.length + 140).replace(/\s+/g, ' ');
             const s = sectionForPage(i + 1);
-            hits.push(`Page ${i + 1}${s ? ` (section "${s.title}")` : ''}: …${snippet}…`);
+            hits.push(`Page ${i + 1}${s ? ` (section "${s.title}")` : ''}: …${snippetAt(text, idx, q.length)}…`);
           }
         });
-        if (!hits.length) return `No matches for "${q}" in the proposal. Try a different or shorter term.`;
-        return `Found ${hits.length} matching page(s) for "${q}" (showing up to 5):\n${hits.slice(0, 5).join('\n')}`;
+        // 2) fallback: individual keywords, pages ranked by how many match
+        if (!hits.length) {
+          const tokens = q.split(/\s+/).filter(w => w.length > 3);
+          const scored = [];
+          pageText.forEach((text, i) => {
+            const lower = text.toLowerCase();
+            const found = tokens.filter(t => lower.includes(t));
+            if (found.length) scored.push({ i, found, idx: lower.indexOf(found[0]) });
+          });
+          scored.sort((a, b) => b.found.length - a.found.length);
+          hits = scored.slice(0, 5).map(({ i, found, idx }) => {
+            const s = sectionForPage(i + 1);
+            return `Page ${i + 1}${s ? ` (section "${s.title}")` : ''} (matched: ${found.join(', ')}): …${snippetAt(pageText[i], idx, found[0].length)}…`;
+          });
+        }
+        if (!hits.length) {
+          return `No matches for "${q}" anywhere in the proposal. This information is NOT in the proposal — you must answer with the out-of-scope message: "This is out of scope of this proposal. If you want to know anything about this proposal, you can ask me." (German: "Das liegt außerhalb dieses Angebots. Wenn Sie etwas über dieses Angebot wissen möchten, fragen Sie mich gern.")`;
+        }
+        return `Found ${hits.length} matching page(s) for "${q}" (showing up to 5). These snippets ARE from the proposal — answer the visitor's question using them. When a snippet lists a role immediately followed by a name (a team roster), that name is the person in that role. Only if none of these snippets relate to the question at all should you use the out-of-scope message:\n${hits.slice(0, 5).join('\n')}`;
       },
 
       gotoSection: (params) => {
@@ -226,7 +245,7 @@ export default function Viewer() {
         <div className="sidebar-head">
           <h1>{PDF_TITLE}</h1>
           <div className="subtitle">{PDF_SUBTITLE}</div>
-          <div className="ready">Ready — {numPages || TOTAL_PAGES} pages</div>
+          <div className="ready">Bereit — {numPages || TOTAL_PAGES} Seiten</div>
         </div>
         <nav className="section-list">
           {SECTIONS.map((s) => {
@@ -252,10 +271,10 @@ export default function Viewer() {
           loading={
             <div className="boot" style={{ background: 'transparent', height: '80vh' }}>
               <div className="boot-spinner" />
-              <p style={{ color: '#e8ecec' }}>Loading proposal…</p>
+              <p style={{ color: '#e8ecec' }}>Angebot wird geladen…</p>
             </div>
           }
-          error={<div className="boot" style={{ background: 'transparent' }}><p style={{ color: '#fff' }}>Failed to load PDF.</p></div>}
+          error={<div className="boot" style={{ background: 'transparent' }}><p style={{ color: '#fff' }}>PDF konnte nicht geladen werden.</p></div>}
         >
           <div className="pages">
             {Array.from({ length: numPages }, (_, i) => {
